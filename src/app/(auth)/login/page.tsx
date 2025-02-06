@@ -1,8 +1,44 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import axios from "axios";
+import { signIn } from "next-auth/react";
 
 export default function Login() {
+  const params = useSearchParams();
+  const [authSate, setAuthState] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<loginErrorType>({});
+
+  const submitForm = async () => {
+    console.log("The auth state is ", authSate);
+    await axios
+      .post("/api/auth/login", authSate)
+      .then((res) => {
+        setLoading(false);
+        const response = res.data;
+        if (response.status === 200) {
+          // console.log("User Logged In");
+          signIn("credentials", {
+            email: authSate.email,
+            password: authSate.password,
+            callbackUrl: "/",
+            redirect: true,
+          });
+        } else if (response.status === 400) {
+          setErrors(response?.errors);
+        }
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .catch((err) => {
+        setLoading(false);
+        console.log("Something went wrong");
+      });
+  };
   return (
     <section>
       <div className="grid grid-cols-1 lg:grid-cols-2 h-screen">
@@ -41,6 +77,13 @@ export default function Login() {
                 Sign Up
               </Link>
             </p>
+            {params.get("message") ? (
+              <p className="bg-green-400 font-bold rounded-md p-4">
+                {params.get("message")}
+              </p>
+            ) : (
+              <></>
+            )}
             <form action="#" method="POST" className="mt-8">
               <div className="space-y-5">
                 <div>
@@ -50,12 +93,22 @@ export default function Login() {
                   >
                     Email address
                   </label>
+
                   <div className="mt-2">
                     <input
                       className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
                       type="email"
                       placeholder="Email"
+                      onChange={(e) =>
+                        setAuthState({
+                          ...authSate,
+                          email: e.target.value,
+                        })
+                      }
                     ></input>
+                    <span className="text-red-500 font-bold">
+                      {errors?.email}
+                    </span>
                   </div>
                 </div>
                 <div>
@@ -72,7 +125,16 @@ export default function Login() {
                       className="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
                       type="password"
                       placeholder="Password"
+                      onChange={(e) =>
+                        setAuthState({
+                          ...authSate,
+                          password: e.target.value,
+                        })
+                      }
                     ></input>
+                    <span className="text-red-500 font-bold">
+                      {errors?.password}
+                    </span>
                   </div>
                   <div className="text-right">
                     <Link href="/forgot-password">Forgot password ?</Link>
@@ -81,9 +143,12 @@ export default function Login() {
                 <div>
                   <button
                     type="button"
-                    className={`inline-flex w-full items-center justify-center rounded-md  px-3.5 py-2.5 font-semibold leading-7 text-white hover:bg-black/80  ${"bg-black"}`}
+                    className={`inline-flex w-full items-center justify-center rounded-md  px-3.5 py-2.5 font-semibold leading-7 text-white hover:bg-black/80  ${
+                      loading ? "bg-gray-500" : "bg-black"
+                    }`}
+                    onClick={submitForm}
                   >
-                    Login
+                    {loading ? "Processing" : "Login"}
                   </button>
                 </div>
               </div>
