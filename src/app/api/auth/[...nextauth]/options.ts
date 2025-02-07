@@ -2,6 +2,8 @@ import { connect } from "@/database/mongo.config";
 import { User } from "@/model/User";
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: AuthOptions = {
   pages: {
@@ -29,6 +31,14 @@ export const authOptions: AuthOptions = {
           return null;
         }
       },
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_ID!,
+      clientSecret: process.env.GITHUB_SECRET as string,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     }),
   ],
 };
